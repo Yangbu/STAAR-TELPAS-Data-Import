@@ -1,0 +1,55 @@
+State Assessment: Raw Data File Import
+Project Goals
+•	Support .dat file import for all state assessment files in 2017
+o	Score per Subject
+o	What data will we include?   Score, Pass, Test Type, PNP, Date, Testing Window
+	1317 = Dec 17
+	1517 = Spring 17
+	1617 = Summer 17
+•	Next year, support .dat file import for all state assessment files in 2018
+o	Score per Subject
+•	Support import of past .dat files? (Note: data file formats are available going back to 2012 but includes TAKS which is no longer in use)
+•	Support import of SIRS data (for transfer students)?
+Problem Space: What we know or are assuming
+•	Known: Districts go to TAMS website.
+•	Known: Districts log in to download three types of files for different “administrations”.
+o	2017 STAAR 3-8 (Data file format) from ETS
+o	2017 STAAR EOC (Data file format) from ETS
+o	2017 STAAR Alternate 2 Grades 3-8 (Data file format) from Pearson Access Next
+o	2017 STAAR Alternate 2 EOC (Data file format) from Pearson Access Next
+o	2017 TELPAS (Data file format) from Pearson Access Next
+o	2017 TAKS (Data file format) from Pearson Access Next (No student enrolled in TAKS)
+•	Known: The data available within each file is inclusive of the current student population.  Some historical information may be available but it is not exhaustive.
+o	For STAAR 3-8, it includes one year of historical information.
+o	For TELPAS, it includes 5 years of historical information for Reading Proficiency and Composite.
+o	Question: Is each file a comprehensive file?  For example, if there were three administrations and you receive successive files for each administration, would the last file include the contents of the first and second files?
+	March 5-8 Math and Reading.
+•	Tested in March.
+•	Results on April 18.
+•	A few weeks later, updates / corrections are made.
+•	Brand new files with everybody included.
+•	There are corrections or versions of files.
+•	We need to identify new, updated, deleted, duplicated.
+	Spring 3-8; in March 4 and 7 grade are tested
+	May 3-8
+	Each successive file is a limited file of data; it is not inclusive of previous administrations.
+•	Assumption: The data available within each file does not contain historical information for students who transferred and tested at the current district for that testing administration.
+o	When a kid is tested in March, results come back and are inclusive of previous districts.
+o	If there is a new student enrolled in April – we won’t get data until they test with us.
+•	Known: When a student transfers, the district can request a “SIRS Report” for students.  Districts upload a list of students for whom they want to make a SIRS request.  The SIRS Report is queued up as “Requested” and “Fulfilled”.  If an error occurs in the upload an “Upload failed” status is shown.  The SIRS Report “will be available in the same format as the reporting layout of the year in which the student was last tested” (Source: Page 99).
+•	Known: Some districts may receive paper records which may be manually added to various systems.
+Questions
+•	When a student transfers to your district, how do you obtain their scores?
+o	SIRS Request
+	Is the SIRS data consistent with the file formats for each of the above?  Would you receive a separate file for each student for each test administration, or is the file a “flat” file that contains more of a summary level of data?
+	For every administration that a student took, there is a file for each administration (regardless of district).  Admin date based data file.
+o	Records from previous school
+Solution
+•	Provide import interface (Question: Should we provide one per test per year where the user would select the import type, or provide a generic interface for upload and the system will identify the test type and year?)
+•	When file is imported, parse through file and extract data
+•	Check for errors and ensure that the parsed data matches expected data where possible
+•	Check for student match (State ID, Local ID, Name)
+•	Import data
+o	If record is new, add (no record for student – test window – score)
+o	If record exists, ignore duplicate (student – test window – same scores)
+o	If record is an update, update record (student – test window – different score)
