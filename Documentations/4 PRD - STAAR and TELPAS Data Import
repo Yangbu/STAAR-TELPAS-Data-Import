@@ -1,0 +1,454 @@
+eStar v3 LPAC: STAAR and TELPAS Data Import
+Product Requirements Document – OneDrive Link
+==================================================================
+
+eStar v3 LPAC Team
+Team Members
+•	Alison Hern
+•	Andrew Horelick
+•	Cathy Beaumont
+•	Dan Kapuscinski
+•	Darsono Sutedja
+•	Diane Loomis
+•	Donald Hayes
+•	George Saunders
+•	Heather Evans
+•	Jason Stewart
+•	Jess Blas
+•	Judy Moon
+•	Keesa Sung
+•	Mark Ventre
+•	Mary Ellen La Camera
+•	Mary Hayes
+•	Nora Kurkul
+•	Nowfal Ebrahim
+•	Sara Frings-Smith
+•	Yang Wu
+
+Team Email List
+Alison Hern <ahern@frontlineed.com>; Sara Frings <sfrings@frontlineed.com>; Cathy Beaumont <cbeaumont@frontlineed.com>; Darsono Sutedja <dsutedja@frontlineed.com>; Mary Hayes <mhayes@frontlineed.com>; Donald Hayes <dhayes@frontlineed.com>; Nowfal Ebrahim <nebrahim@frontlineed.com>; Mark Ventre <mventre@frontlineed.com>; Judy Moon <jmoon@frontlineed.com>; Nora Kurkul <nkurkul@frontlineed.com>; Diane Loomis <dloomis@frontlineed.com>; Jess Blas <jblas@frontlineed.com>; Jason Stewart <jstewart@frontlineed.com>; Heather Evans <hevans@frontlineed.com>; MaryEllen LaCamera <mlacamera@frontlineed.com>; Keesa Sung <ksung@frontlineed.com>; Andrew Horelick <ahorelick@frontlineed.com>
+
+Team Slack Channel: #prv-tm-sei-lpac
+Project Slack Channel: #prj-tx-data-import
+
+
+0. Jobs to be done
+User Story
+•	When we receive STAAR and TELPAS results from TEA, I want to import them into the system with as little effort as possible so that the data can be used by staff to make decisions about students.
+o	Expected outcome: Minimize the amount of time to bring data into the system.
+o	Expected outcome: Reduce manual entry of data in the system.
+o	Expected outcome: Increase reliability of data accuracy in system while managing multiple possible entry points.
+
+Jobs Collateral (e.g. interview, sketch, workflow)
+•	Story Deck (PowerPoint Deck)
+The Texas Education Agency (TEA) requires students to take the STAAR test each year.  In addition, all students classified as 1 - LEP (Limited English Proficient) must take the TELPAS assessment.  When results are returned to the district, they are used for a variety of purposes including consideration for exit for students with Limited English Proficiency.
+
+Current Behavior
+•	The system supports the addition of assessment records through the following methods:
+•	Integration
+•	Data Import
+•	Manual Addition
+•	Addition of data:
+•	When data is added via an integration, the system wipes and replaces all data (including manually added data) [Note: this implies that the SIS is the single source of truth for data]
+•	Data Import
+•	The Data Import specification allows a user to define a delimited file definition [Note: this requires that users transform the .dat file into an accepted delimited file type]
+•	Current Pain Points and Workarounds:
+•	Users take screenshots of Eduphoria assessment results and paste them into the rich text field to include the data for review
+•	Users who manually enter data "lose their work" when an integration sync occurs
+•	Administrative users must manually reformat the .dat file into a supported file format; this is a cumbersome step and often is a point of failure for many districts; where this is the case, teachers may be enlisted to manually add data
+
+How might we address the “job”? Possible Solutions
+•	Automated integration with TAMS
+•	Support import of raw data (.dat file and .xls file types)
+•	Integration with third party vendors (e.g. Eduphoria, SIS Vendors)
+
+Solution Approach:
+Automated integration with TAMS is unlikely and integration with third party vendors will require managing various integration points.  For now, adding the ability to do a direct upload of the raw data file seems to be the most valuable solution that will benefit all districts while reducing the amount of work needed to bring data into the system.
+
+1. Solution: Functional & Non-Functional Requirements
+T-shirt Size
+L
+
+Success Criteria
+Solution Approach
+•	The system shall support the addition of assessment records through the following methods:
+•	Integration (Current)
+•	Data Import v1 (Current)
+•	Data Import v2 (.dat file) New
+•	Manual addition (Current)
+
+Create Data Import v2 to support 2017 STAAR 3-8 Testing .dat file
+•	The system shall provide an interface for the user to upload a .dat file consistent with the STAAR .dat file
+•	The system shall import the .dat file
+•	The system shall pull the following fields from the .dat file:
+•	Student Identifier (to match eStar record) - (74-82) 9 Characters – Student-ID (Note: this is the same ID as is used for PEIMS.  There is an optional local-student-id field located later in the file as well but may not be as reliable of a source of data).
+•	Grade – (5-6) 2 Characters – Grade Level Tested
+•	Test Year – (1-4) 4 Characters – Administration Date (0317 = March 2017)
+•	Month – (1-4) 4 Characters – Administration Date (0317 = March 2017)
+•	Day – Leave blank since day is not available in .dat file format.
+•	Subject
+	Note, in eStar, the data model is 1 assessment record to 1 subject.  As such, the system will need to transform the data from one row of data into several records for each available subject score.
+	Reading: Add record if (351-351) has a value of S (for “score”).
+	Mathematics: Add record if (352-352) has a value of S.
+	Writing: Add record if (353-353) has a value of S.
+	Social Studies: Add record if (354-354) has a value of S.
+	Science: Add record if (355-355) has a value of S.
+•	Test Language:
+	Reading: (413-413) 1 character – Reading Language Version (E = Engilsh, S = Spanish)
+	Mathematics: 767-767 (E = English, S = Spanish)
+	Writing: 1113-1113 (E = English, S = Spanish)
+	Social Studies: 1515-1515 (E = English)
+	Science: 1915-1915 (E = English, S = Spanish)
+•	Test Type
+	For reading (414 – 414) 1 Character – Reading Test Version (S = STAAR) (Note: this may not map to the custom values in the system.).  Additionally, (415-415) 1 Character – Reading Test Administration Mode indicates O = Online test administration and P = Paper test administration)
+	Mathematics: 768-768 AND 769-769 (O = Online test administration, P = Paper test administration)
+	Writing: 1114-1114 AND 1115-1115 (O = Online test administration, P = Paper test administration)
+	Social Studies: 1516-1516 AND 1517-1517 (O = Online test administration, P = Paper test administration)
+	Science: 1916-1916 AND 1917-1917 (O = Online test administration, P = Paper test administration)
+•	Result (Raw score)
+	Reading: 407-408
+	Mathematics: 761-762
+	Writing: 1107-1108
+	Social Studies: 1509-1510
+	Science: 1909-1910
+•	Scale Score
+	Reading: 409-412
+	Mathematics: 763-766
+	Writing: 1109-1112
+	Social Studies: 1511-1514
+	Science: 1911-1914
+•	Score Code
+	[Note: Need to clarify which field in the .dat file this corresponds to]
+•	Accommodations
+	Reading: If any of the following = 1, then set to “Yes”.
+	252-252 General Accommodations
+	253-253 Braille
+	254-254 Large Print
+	256-256 Extra Day
+	259-259 Text-to-Speech
+	260-260 Language and Vocabulary Supports
+	261-261 Content Supports
+	Mathematics: If any of the following = 1, then set to “Yes”.
+	272-272 General Accommodations
+	273-273 Braille
+	274-274 Large Print
+	276-276 Extra Day
+	279-279 Text-to-Speech
+	280-280 Language and Vocabulary Supports
+	281-281 Content Supports
+	Writing
+	292-292 General Accommodations
+	293-293 Braille
+	294-294 Large Print
+	295-295 Extra Day
+	297-297 Text-to-Speech
+	298-298 Language and Vocabulary Supports
+	299-299 Content Supports
+	Social Studies:
+	312-312 General Accommodations
+	313-313 Braille
+	314-314 Large Print
+	316-316 Extra Day
+	319-319 Text-to-Speech
+	320-320 Language and Vocabulary Supports
+	321-321 Content Supports
+	Science: 
+	332-332 General Accommodations
+	333-333 Braille
+	334-334 Large Print
+	336-336 Extra Day
+	339-339 Text-to-Speech
+	340-340 Language and Vocabulary Supports
+	341-341 Content Supports
+
+Create Data Import v2 to support 2017 STAAR EOC Testing .dat file
+•	The system shall provide an interface for the user to upload a .dat file consistent with the STAAR .dat file
+•	The system shall import the .dat file
+•	The system shall pull the following fields from the .dat file:
+•	Student Identifier (to match eStar record)
+•	Grade 5-6
+•	Test Year 1-4 (1516= Spring 2016, 1616 = Summer 2016, 1316 = Fall 2016)
+•	Month – Note: we will only receive spring, summer and fall on the file.  We can match with TEA’s administration windows and default to the start of the window.
+•	Day – leave blank.
+•	Subject: 201-202 (A1 = Algebra I, BI = Biology, E1 = English I, E2 = English II, US = U.S. History, E3 = English III, A2 = Algebra II)
+•	Test Language: Default to English
+•	Test Type:
+•	(306-306) Test Version (S = STAAR, L = STAAR L, A = STAAR A)
+•	(301-301) Test Administration Mode (O = Online test administration, P = Paper test administration)
+•	Result: Process if Score Code (291-291) is S for Score.
+•	(356-366) Raw Score
+•	Scale Score: (367-370) Scale Score
+•	Score Code: Need to clarify
+•	Accommodations:
+•	General Accommodations: 252-252 (1 = Yes, 0 = No)
+•	Braille: 253-253 (1 = Yes, 0 = No)
+•	Large Print: 254-254 (1 = Yes, 0 = No)
+•	Oral Administration: 255-255 (1 = Yes, 0 = No)
+•	Extra Day: 256-256 (1 = Yes, 0 = No)
+•	Linguistic Accommodations: 257-257 (1 = Yes, 0 = No)
+
+Create Data Import v2 to support 2017 STAAR Alternate 2 Grades 3-8 Testing .dat file
+•	The system shall provide an interface for the user to upload a .dat file consistent with the STAAR .dat file
+•	The system shall import the .dat file
+•	The system shall pull the following fields from the .dat file:
+•	Student Identifier (to match eStar record)
+•	Administration Date (four character denoting date and year): (1-4) Administration Date (0417 = Spring 2017)
+•	Grade: (5-6) Grade Level (Values range from 03-08)
+•	Test Year: 
+•	Month: Not available as a field; Sp
+•	ring 2017 can be defaulted to the start of the testing window.
+•	Day: Not available as a field – can leave blank.
+•	Test Language: 
+•	Test Type: STAAR Alternate 2 Grades 3-8
+•	Subject: Subjects are assessed as follows
+	Grade 3: Reading, Mathematics
+	Grade 4: Reading, Mathematics, Writing
+	Grade 5: Reading, Mathematics, Science
+	Grade 6: Reading, Mathematics
+	Grade 7: Reading, Mathematics, Writing
+	Grade 8: Reading, Mathematics, Social Studies, Science
+	Reading: Process if (351-351) is S for Score.
+•	Result: (407-408) Reading Raw Score
+•	Scale Score: (409-412) Reading Scale Score
+•	Score Code: Need to clarify
+•	Accommodations: If any of the following = 1, set to “Yes”.
+	Color or Highlight: 651-651
+	Color Overlays: 652-652
+	Photographs of Objects: 654-654
+	Textured Materials: 655-655
+	Demonstrate: 656-656
+	Raise or Darken Outline: 657-657
+	Enlarge: 658-658
+	Braille: 659-659
+	Describe Images: 660-660
+	Presentation: 661-661
+	Isolate Images: 662-662
+	Picture Representations: 663-663
+	Reread Text: 664-664
+	Calculator: 665-665
+	Provide Structured Reminders: 666-666
+	Mathematics: Process if (352-352) is S for Score.
+•	Result: (761-762) Mathematics Raw Score
+•	Scale Score: (763-766) Mathematics Scale Score
+•	Score Code: (352-352)
+•	Accommodations: 
+	Color or Highlight: 1001-1001
+	Color Overlays: 1002-1002
+	Photographs of Objects: 1004-1004
+	Textured Materials: 1005-1005
+	Demonstrate: 1006-1006
+	Raise or Darken Outline: 1007-1007
+	Enlarge: 1008-1008
+	Braille: 1009-1009
+	Describe Images: 1010-1010
+	Presentation: 1011-1011
+	Isolate Images: 1012-1012
+	Picture Representations: 1013-1013
+	Reread Text: 1014-1014
+	Calculator: 1015-1015
+	Provide Structured Reminders: 1016-1016
+	Writing: Process if (353-353) is S for Score.
+•	Result: 1107-1108
+•	Scale Score: 1109-1112
+•	Score Code: 353-353
+•	Accommodations: 
+	Color or Highlight: 1401-1401
+	Color Overlays: 1402-1402
+	Photographs of Objects: 1404-1404
+	Textured Materials: 1405-1405
+	Demonstrate: 1406-1406
+	Raise or Darken Outline: 1407-1407
+	Enlarge: 1408-1408
+	Braille: 1409-1409
+	Describe Images: 1410-1410
+	Presentation: 1411-1411
+	Isolate Images: 1412-1412
+	Picture Representations: 1413-1413
+	Reread Text: 1414-1414
+	Calculator: 1415-1415
+	Provide Structured Reminders: 1416-1416
+	Social Studies: Process if (354-354) is S for Score.
+•	Result: 1509-1510
+•	Scale Score: 1511-1514
+•	Score Code: 354-354
+•	Accommodations
+	Color or Highlight: 1801-1801
+	Color Overlays: 1802-1802
+	Photographs of Objects: 1803-1803
+	Textured Materials: 1805-1805
+	Demonstrate: 1806-1806
+	Raise or Darken Outline: 1807-1807
+	Enlarge: 1808-1808
+	Braille: 1809-1809
+	Describe Images: 1810-1810
+	Presentation: 1811-1811
+	Isolate Images: 1812-1812
+	Picture Representations: 1813-1813
+	Reread Text: 1814-1814
+	Calculator: 1815-1815
+	Provide Structured Reminders: 1816-1816
+	Science: Process if (355-355) is S for Score.
+•	Result: 1909-1910
+•	Scale Score: 1911-1914
+•	Score Code: 355-355
+•	Accommodations
+	Color or Highlight: 2201-2201
+	Color Overlays: 2202-2202
+	Photographs of Objects: 2204-2204
+	Textured Materials: 2205-2205
+	Demonstrate: 2206-2206
+	Raise or Darken Outline: 2207-2207
+	Enlarge: 2208-2208
+	Braille: 2209-2209
+	Describe Images: 2210-2210
+	Presentation: 2211-2211
+	Isolate Images: 2212-2212
+	Picture Representations: 2213-2213
+	Reread Text: 2214-2214
+	Calculator: 2215-2215
+	Provide Structured Reminders: 2216-2216
+
+ 
+
+Create Data Import v2 to support 2017 STAAR Alternate 2 EOC Testing .dat file
+•	The system shall provide an interface for the user to upload a .dat file consistent with the STAAR .dat file
+•	The system shall import the .dat file
+•	The system shall pull the following fields from the .dat file:
+•	Student Identifier (to match eStar record)
+•	Grade
+•	Test Year: 1-4 Administration Date (1517 = Spring 2017)
+•	Month: Not available – can default to start of testing window
+•	Day: Leave blank
+•	Test Language: 
+•	Test Type: STAAR Alternate 2 EOC
+•	Subject: 201-202 End of Course Code (A1 = Algebra I, BI = Biology, E1 = English I, E2 = English II, US = U.S. History)
+•	Score Code: 291-291 Score Code (A = Absent, M = Medical Exception, N = No authentic academic response, O = Other, S = Score)
+•	Result: 365-366
+•	Scale Score: 367-370
+•	Accommodations: 
+	Color or Highlight: 701-701
+	Color Overlays: 702-702
+	Photographs of Objects: 704-704 
+	Textured Materials: 705-705
+	Demonstrate: 706-706
+	Raise or Darken Outline: 707-707
+	Enlarge: 708-708
+	Braille: 709-709
+	Describe Images: 710-710
+	Presentation: 711-711
+	Isolate Images: 712-712
+	Picture Representations: 713-713
+	Reread Text: 714-714
+	Calculator: 715-715
+	Provide Structured Reminders: 716-716
+
+Create Data Import v2 to support 2017 TELPAS Testing .dat file
+•	The system shall provide an interface for the user to upload a .dat file consistent with the TELPAS .dat file
+•	The system shall import the .dat file
+•	The system shall pull the following fields from the .dat file:
+•	Student Identifier (to match eStar record)
+•	(1-4) 4 characters – Administration date (0316 = Spring 2016)(MISSING)
+•	(5-6) 2 characters – Grade Level Code (0K = K, 01 = 01, etc.)
+•	(74-82) 9 characters – Student ID
+•	(201-201) 1 character – General Reading Accommodations (1 = Yes, 0 = No)(MISSING)
+•	(202-202) 1 character – Large Print (1 = Yes, 0 = No)(MISSING)
+•	(230-230) 1 character – Plan-Year TELPAS Composite Rating (0 = No Rating Available, 1 = Beginning, 2 = Intermediate, 3 = Advanced, 4 = Advanced High)(MISSING)
+•	(233-233) 1 character – Listening Proficiency Rating (0 = No Rating Available, 1 = Beginning, 2 = Intermediate, 3 = Advanced, 4 = Advanced High)
+•	(248-248) 1 character – Speaking Proficiency Rating (0 = No Rating Available, 1 = Beginning, 2 = Intermediate, 3 = Advanced, 4 = Advanced High)
+•	(261-261) 1 character – Writing Proficiency Rating (0 = No Rating Available, 1 = Beginning, 2 = Intermediate, 3 = Advanced, 4 = Advanced High)
+•	(276-276) 1 character – Reading Proficiency Rating (0 = No Rating Available, 1 = Beginning, 2 = Intermediate, 3 = Advanced, 4 = Advanced High)
+•	(627-629) 3 characters – TELPAS Comprehension Score
+•	(630-630) 1 character – TELPAS Composite Rating (0 = No Rating Available, 1 = Beginning, 2 = Intermediate, 3 = Advanced, 4 = Advanced High)
+
+Adding Records
+•	A duplicate is defined as two records with the same student, same test, same year, same subject, same window, same scale score
+•	An 'update' record is defined as two records with the same student, same test, same year, same subject, same window, different score or different score code
+•	When the system attempts to add a new record, the system shall check to determine if the record is a duplicate or an 'update'
+•	If the record is a duplicate, the system shall skip the record and log an error
+•	If the record is an 'update', the system shall update the record with the latest data
+•	If a user has manually entered a duplicate record, the system shall display an error in the interface
+•	If the record is unique, the system shall add the record to the student's record (note: this should be made available to all products - ARD, 504, RTI, LPAC etc.)
+
+Editing Existing Records
+•	The system shall allow a user to manually edit an existing record, regardless of its origin (e.g. integration, data import v1, data import v2, manual addition)
+•	When an existing record is edited, the system shall save the new record
+•	If an integration or data import is performed after the record is edited, the system shall follow the logic stated above (in the event that the record is considered an 'update', the system shall update the record)
+
+Support Maintainable Changes in Data Import Capability
+Note: Each year, the .dat file is likely to change.  The design of the system should account for this known variation.  For example, providing an interface for an internal team member to define a data mapping (e.g. Listening Proficiency Rating field is at position 233 to 233, value 0 = No rating available, value 1 = Beginning, value 2 = Intermediate, value 3 = Advanced, value 4 = Advanced High)
+
+State Assessment Screen (? This was an idea suggested at team meeting to implement a State Assessment screen across all products)
+•	The system shall provide an interface to view State Assessment scores
+•	The system shall display all STAAR records
+•	The system shall display all TELPAS records
+
+LPAC Updates
+•	If a STAAR record is available for a student, the system shall display it in the STAAR Tests screen as a record
+•	If a TELPAS record is available for a student, the system shall display it in the TELPAS Tests screen as a record
+•	The system shall automatically pull the STAAR testing data into the EOY screen
+•	The system shall automatically pull the TELPAS testing data into the EOY screen
+•	The system shall automatically pull the STAAR testing data into the Progress Reports screen
+•	The system shall automatically pull the TELPAS testing data into the Progress Reports screen
+
+Non-functional requirements
+•	The design of the interface should be flexible to accommodate for yearly changes in file structure
+
+
+2. Preparation
+Preparation Item	X / Not Required	Notes	Completion Date
+Regulatory: Advance Notification (internal and external; receipt of change & estimated delivery)	NR	Internal:
+External:	Internal:
+External:
+External Input (e.g clients, prospects, market reps, interviews)	Clients
+Dickinson ISD
+San Antonio ISD
+Ysleta ISD		
+Post Release Review & Evaluation (e.g. 30, 60, 90 days)			
+
+3. Cross-Functional Analysis: What teams may be involved / impacted by this work?
+RACI:  R = Responsible, A = Assists, C = Consulted, I = Informed
+
+eStar v3 LPAC	RACI / NR	Notes	Delegates	Release Readiness	Completion Date
+Product Management Team	C	       	@all	              	
+Portfolio Manager	C		@gsaunders		Approved: 
+Internal SME / Market Owner	I		@ahorelick		
+External Advisory / SME	NR		@lpacadvisory		
+External Regulatory Authority	NR		@TEA		
+Architecture	I	     	@nebrahim		      
+Client Success	I	  	@mventre		  
+Data	I		@dkapuscinksi		
+Development	I		@nebrahim		
+Dev-ops 	I		@nebrahim		
+Implementation	I		@ahern		
+LX	I		@ahern		
+Product Marketing	I	This is a strategically important capability for the v3 platform.	@ksung		
+Platform	I		@nebrahim		
+QA	I		@team		
+Sales	I		@hevans		
+Security	I		@nebrahim		
+Training	I		@ahern		
+UX	R	Peter may need to help design an interface for the upload.	@psawchuk		
+Mobile	I		@dcurry		
+
+ 4. Functional Impact Analysis: What are potential impact areas for the product or platform?
+	Potential Impact?	Stakeholders (RACI)	Dev Review Date	Release Readiness	Completion Date
+Compliance / Validation	NA				
+State Reporting	NA				
+Reports (Crystal, Listings)	NA				
+Printed Documents	X – The values from the data will populate printed documents but should have no impact on them.				
+Data Conversions (new customers)	NA				
+Integrations (SIS, 3rd Party)	X – this is considered a type of integration and should be considered when the impacts of integrations and data uploads.	@nkurkul			
+Security	NA				
+Medicaid	NA				
+IEP	X – where state assessments are available, this data will show.				
+504	X – where state assessments are available, this data will show.				
+RTI / MTSS	X – where state assessments are available, this data will show.				
+Production Data Changes					
+
+5. Risk Analysis: What are the risks associated with doing this work?
+Identified Risk	Notes	Business / Technical	Mitigation Strategy	Stakeholders	Release Readiness	Completion Date
+NA		 	 	 		 
+ 		 	 	 		 
+ 		 	 	 		 
+ 
+
