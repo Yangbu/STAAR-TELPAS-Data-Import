@@ -1,0 +1,358 @@
+<html>
+<head>
+<title>Beginning of School Year Record Update</title>
+<style>
+.proc_header {
+	background: #d0d0d0;
+	border: 1px solid #a0a0a0;
+	font-family: Arial;
+	font-size: 1em;
+	padding: 0.5em;
+	font-weight: bold;
+}
+
+.proc_column {
+	border: 1px solid #a0a0a0;
+	padding: 0.5em;
+	font-family: Arial;
+	font-size: 1em;
+}
+
+.capsule_button {
+	float: left;
+	padding: 0.4em;
+	background: #f0f0f0;
+	border-radius: 5px;
+	border: 1px solid #a0a0a0;
+	margin-bottom: 0.5em;
+}
+
+.att_cell {
+	padding: 0.7em;
+}
+
+.log_content {
+	border: 1px solid #a0a0a0;
+}
+</style>
+<script LANGUAGE="JAVASCRIPT" TYPE="Text/JavaScript">
+	var bUploadedFile = false;
+	var sFile = "";
+	var changeTypeFlag = false;
+	var changeFileFlag = false;
+
+	function doload() {
+		document.getElementById('tbl_daton').style.display = "block";
+		$("#fileType").html($('#fileType option').filter(function() {
+			return this.value && $.trim(this.value).length != 0;
+		}))
+		$("#fileType").html(
+				$('#fileType option').sort(function(option1, option2) {
+					var v1 = $(option1).text();
+					var v2 = $(option2).text();
+					var sub1 = v1.substring(0, 4);
+					var sub2 = v2.substring(0, 4);
+					if (sub1 < sub2)
+						return 1;
+					if (sub1 > sub2)
+						return -1;
+					else if (v1 < v2)
+						return -1;
+					else
+						return 1;
+				}))
+		$("#fileType").get(0).selectedIndex = 0;
+		e.preventDefault();
+	}
+
+	function changeType() {
+		changeTypeFlag = true;
+		if ($('#sliderToggleImport').attr('src') === "/images/docs/collapse.png") {
+			$('#sliderToggleImport').attr('src', "/images/docs/expand.png");
+			$('.slidingDivImport').slideToggle();
+		}
+	}
+
+	function checkFileStatus() {
+		if (!bUploadedFile) {
+			alert("Please upload your .dat file.");
+			return false;
+		}
+		return true;
+	}
+
+	$(document).ready(function() {
+
+		$("#Preview").click(function() {
+			callServer(false);
+		});
+
+		$('#Update').click(function() {
+			doUploadSubmit('uploadfrm2', 'File2', 'uploadDiv2');
+			callServer(true);
+		});
+	});
+
+	function callServer(kdoit) {
+		var f = document.forms[0];
+		if (checkFileStatus()) {
+			var e = document.getElementById("fileType");
+			var dropdownlistItem = e.options[e.selectedIndex].value;
+			if (promptInitialRun(kdoit)) {
+				changeTypeFlag = false;
+				changeFileFlag = false;
+				var rollbackname = dropdownlistItem + Date.now();
+				$.ajax({
+					async : false,
+					beforeSend : function() {
+						alert("Please don't close or reload the page");
+					},
+					success : function(data) {
+						executeUpdate(kdoit, dropdownlistItem, rollbackname);
+						alert("Update is done");
+						showSlider(kdoit, rollbackname);
+					}
+				})
+			}
+		}
+	}
+
+	function executeUpdate(kdoit, dropdownlistItem, rollbackname) {
+		var f = document.forms[0];
+		var params = "&QPROCEDURE_ORGUID="
+				+ "call com.esped.proc.TX.LPAC.UpdateDAT(" + "'"
+				+ document.getElementById('File2').files[0].name + "'," + "'"
+				+ dropdownlistItem + "'," + "'" + kdoit + "'," + "'"
+				+ rollbackname + "')";
+		params = params + encodeURI("&XMLHTTPmessage=%JSONSTATUS%");
+		startRequest("xml", "POST", f.action, "XMLHTTPsubform=true" + params,
+				false, function(http_request) {
+				});
+	}
+
+	function doUploadSubmit(uploadfrm, file, uploadDiv) {
+		if (document.getElementById(file).value == "") {
+			alert("Please choose a file to upload");
+			document.getElementById(file).focus();
+			return false;
+		}
+		changeFileFlag = true;
+		document.getElementById(uploadfrm).setAttribute("encoding",
+				"multipart/form-data");
+		document.getElementById(uploadfrm).submit();
+		dataInput(document.getElementById(uploadDiv), 'none');
+		if ($('#sliderToggleImport').attr('src') === "/images/docs/collapse.png") {
+			$('#sliderToggleImport').attr('src', "/images/docs/expand.png");
+			$('.slidingDivImport').slideToggle();
+		}
+	}
+
+	function uploadComplete() {
+		var file2Url = "";
+		if (document.getElementById('File2').files[0]) {
+			file2Url = document.getElementById('File2').files[0].name;
+		} else {
+			file2Url = document.getElementById('File2').value;
+		}
+		if (file2Url) {
+			document.getElementById('chosenfile2').innerHTML = file2Url;
+			fileName = file2Url;
+			bUploadedFile = true;
+		}
+	}
+
+	function callData(proc, dataname, datefield, dryRun) {
+		if (checkFileStatus(proc)) {
+			var f = document.forms[0];
+			promptInitialRun(!dryRun);
+		}
+	}
+
+	function promptInitialRun(kdoit) {
+		var msg = 'This will perform a DRY-RUN where no changes will be made but a log of what would have been updated will be produced.\r\nPress OK to continue.';
+		if (kdoit) {
+			msg = 'This will UPDATE student information to new values. A log of what has been updated will also be produced.\r\nPress OK to continue.';
+		}
+		return confirm(msg);
+	}
+
+	function setTextContent(element, text) {
+		while (element.firstChild !== null) {
+			element.removeChild(element.firstChild); // remove all existing content
+		}
+		element.appendChild(document.createTextNode(text));
+	}
+
+	function getUpdateLog(http_request, desc) {
+		try {
+			if (http_request.status == 200 || http_request.status == 0) {
+				var log = JSON.parse(http_request.responseText);
+				var divname = "div" + desc;
+				var test = log[0][0];
+				if (!test.startsWith("Starting")) {
+					document.getElementById("Update").style.display = "none";
+					document.getElementById("Warning").style.display = "none";
+				} else {
+					document.getElementById("Update").style.display = "block";
+					document.getElementById("Warning").style.display = "block";
+				}
+				setTextContent(document.getElementById(divname), log);
+			}
+		} catch (kk) {
+			alert(kk);
+		}
+	}
+
+	function showSlider(kdoit, rollbackname) {
+		if (changeTypeFlag || changeFileFlag)
+			return;
+		changeTypeFlag = false;
+		var id = "sliderToggleImport";
+		var ddquery = "dat_import_log";
+		if ($('#sliderToggleImport').attr('src') === "/images/docs/collapse.png") {
+			$('#sliderToggleImport').attr('src', "/images/docs/expand.png");
+		} else {
+			$('#sliderToggleImport').attr('src', "/images/docs/collapse.png");
+
+			var params = "&XMLHTTPAction=DDQuery";
+			params += "&XMLHTTPquery=" + ddquery;
+			params += "&XMLHTTPparam1=" + rollbackname;
+			startRequest("xml", "POST", "/servlet/com.esped.apps.US.Ajax",
+					params, false, function(http_request) {
+						getUpdateLog(http_request, "Import");
+					});
+		}
+		$('.slidingDivImport').slideToggle();
+	}
+</SCRIPT>
+</head>
+<body onLoad="doload();">
+	<form method=post action="">
+		<INPUT ID="QPROCEDURE_ORGUID" CLASS=inputfld NAME="QPROCEDURE_ORGUID"
+			TYPE=HIDDEN>
+		<table cellpadding="0" cellspacing="0" bgColor="#dddddd" border="0"
+			width="825" class="screenFrame">
+
+			<tr>
+				<td width="817" style="border-style: ridge; border-color: #808080">
+					<table border="0" bordercolor="#999999" cellPadding="0"
+						cellSpacing="0" width="825"
+						style="border-left-width: 0px; border-right-width: 0px">
+						<tbody>
+
+							<tr>
+								<td colspan="3">
+									<table cellpadding="0" cellspacing="0" border="0" width="100%">
+										<tr>
+											<td>&nbsp;</td>
+										</tr>
+									</table> <INPUT ID="QPROCEDURE_POST" CLASS="inputfld"
+									NAME="QPROCEDURE_POST" TYPE=HIDDEN>
+									<table cellpadding="0" cellspacing="0" bgColor="#dddddd"
+										border="0" width="825" class="screenFrame" id="tbl_daton"
+										style="display: none">
+										<tr>
+											<td width="817"
+												style="border-style: ridge; border-color: #808080">
+												<table border="0" bordercolor="#999999" cellPadding="0"
+													cellSpacing="0" width="796"
+													style="border-left-width: 0px; border-right-width: 0px; margin: 0.5em 1em 0.5em 0.8em;">
+													<tbody>
+														<tr>
+															<td valign="top" class="proc_column"
+																style="max-width: 50em;"><strong>State
+																	Assessment File Import</strong> <br> <br> Select File
+																Type<br> <br> <select id="fileType"
+																onchange="changeType()" name="FAKE$$tfilename"
+																sfield="ref_dataimport_file$tfilename" sparam="NOADD"></select><br>
+																<br> <br> <input type=button name="ChooseFile"
+																value="Browse..."
+																onclick="dataInput(document.getElementById('uploadDiv2'),'block');">
+																<i><span name="chosenfile2" id="chosenfile2">No
+																		file chosen</span></i> <br> <br>
+																<div>
+																	<img onClick="showSlider();" id="sliderToggleImport"
+																		src="/images/docs/expand.png" name="I3"> <input
+																		type="button" value="Preview & Update" name="Preview"
+																		id="Preview"
+																		style="font-family: Arial; font-size: 1em; align: center; width: 10em; padding: 0.3em; margin-top: 0.5em;">
+																	<br> <br>
+																	<fieldset class="slidingDivImport log_content"
+																		style="display: none;">
+
+																		<input type="button" name="Update" id="Update"
+																			value="Update Now"><font id="Warning" color="red">(This
+																			could take a few minutes or longer depending on
+																			the file size)</font>
+																		<pre>
+                        												<div id="divImport" name="divImport" style="max-width: 68em; overflow: auto; max-height: 50em;"></div>
+                     													</pre>
+																	</fieldset>
+																</div> <br></td>
+														</tr>
+													</tbody>
+												</table>
+											</td>
+										</tr>
+									</table>
+									</form> <iframe id="UploadFrame" name="UploadFrame"
+										style="display: none;" class=butinput></iframe>
+									<form action="/servlet/com.esped.apps.US.UploadDat"
+										ENCTYPE="multipart/form-data" method=post id=uploadfrm2
+										target="UploadFrame">
+										<div id=uploadDiv2 style="border-collapse: collapse"
+											border="1" style="display:none;">
+											<table width="720" height="140" cellspacing="1"
+												cellpadding="0" bgcolor="#DADADA"
+												style="border-left: 1px ridge #0000FF; border-right: 1px ridge #0000FF; border-bottom: 1px ridge #0000FF; border-collapse: collapse; border-top-width: 1px"
+												border="0" class=defaultbl>
+												<tr>
+													<th colspan=2 bgcolor="#FF9900" height="41"
+														style="border-bottom: 1px solid #000000;" align=left>
+														&nbsp; <INPUT ID=Close VALUE="Cancel" CLASS=inputfld
+														NAME="Close"
+														onclick="return dataInput(document.getElementById('uploadDiv2'),'none');"
+														TYPE=button>
+													</td>
+													<font face="Trebuchet MS" color=white size="4"> <b><label
+															id=dTitle class=dTitle>Upload File</label></b></font>
+													</th>
+												</tr>
+												<tr>
+													<td>&nbsp;Click the <b>Browse</b> button to select a
+														file to upload.
+													</td>
+												</tr>
+												<tr>
+													<td>
+														<p>
+															<a class=selOption1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+																File Name:&nbsp;</a> <INPUT class=nb1 id="File2" TYPE="File"
+																NAME="File2" size=60
+																style="font-size: 10pt; font-family: Tahoma; color: #0000FF">
+														<p>
+															&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span id='sizespan'></span>
+														</p>
+													</td>
+												</tr>
+												<tr>
+													<td>&nbsp; <img src=/images/working.jpg id=imworking
+														style="display: none;">
+													</td>
+												</tr>
+												<tr>
+													<td>&nbsp; <INPUT class=nb1 TYPE="button"
+														onClick="doUploadSubmit('uploadfrm2','File2','uploadDiv2');"
+														value="Send it to the Server"
+														style="font-size: 9pt; font-family: Tahoma; color: #0000FF"
+														name="SendFile">
+													</td>
+												</tr>
+												<tr>
+													<td>&nbsp;</td>
+												</tr>
+											</table>
+										</div>
+									</form>
+</body>
+</html>
